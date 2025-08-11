@@ -53,8 +53,9 @@ fun Player() {
     }
 
     LaunchedEffect(Unit) {
-        playerState.setFileUrl("https://www.sample-videos.com/video321/mp4/360/big_buck_bunny_360p_20mb.mp4")
-        playerState.play()g
+        // Usando arquivo da pasta raw com protocolo correto
+        playerState.setFileUrl("android.resource://com.example.teste/raw/sample_short_single_channel_m4a")
+        playerState.play()
 
         playerState.observePlayerEvent().collect { event ->
             when (event) {
@@ -75,6 +76,16 @@ fun Player() {
 fun PlayerControls(playerState: KMPPlayerState) {
     var isPlaying by remember { mutableStateOf(false) }
     var isLooping by remember { mutableStateOf(false) }
+    
+    // Lista de arquivos disponíveis na pasta raw
+    val availableFiles = listOf(
+        "sample_short_single_channel_m4a",
+        "sample_short_single_channel_mp3", 
+        "testmp4"
+    )
+    
+    var currentFileIndex by remember { mutableStateOf(0) }
+    var currentFile by remember { mutableStateOf(availableFiles[0]) }
 
     Column(
         modifier = Modifier
@@ -134,6 +145,48 @@ fun PlayerControls(playerState: KMPPlayerState) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Botões de navegação (Previous e Next)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = {
+                    // Anterior
+                    currentFileIndex = if (currentFileIndex > 0) currentFileIndex - 1 else availableFiles.size - 1
+                    currentFile = availableFiles[currentFileIndex]
+                    val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    playerState.setFileUrl(filePath)
+                    playerState.play()
+                    isPlaying = true
+                    println("Carregando arquivo anterior: $filePath")
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("⏮️ Previous")
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = {
+                    // Próximo
+                    currentFileIndex = (currentFileIndex + 1) % availableFiles.size
+                    currentFile = availableFiles[currentFileIndex]
+                    val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    playerState.setFileUrl(filePath)
+                    playerState.play()
+                    isPlaying = true
+                    println("Carregando próximo arquivo: $filePath")
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("⏭️ Next")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Botões de configuração
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -153,11 +206,14 @@ fun PlayerControls(playerState: KMPPlayerState) {
 
             Button(
                 onClick = {
-                    playerState.setFileUrl("https://www.sample-videos.com/video321/mp4/360/big_buck_bunny_360p_20mb.mp4")
+                    // Carregar arquivo específico
+                    val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    playerState.setFileUrl(filePath)
+                    println("Carregando arquivo: $filePath")
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("🌐 URL")
+                Text("📁 Carregar")
             }
         }
 
@@ -199,6 +255,12 @@ fun PlayerControls(playerState: KMPPlayerState) {
             text = "Status: ${if (isPlaying) "Reproduzindo" else "Parado"} | Loop: ${if (isLooping) "ON" else "OFF"}",
             color = Color.White,
             fontSize = 14.sp
+        )
+        
+        Text(
+            text = "Arquivo atual: $currentFile (${currentFileIndex + 1}/${availableFiles.size})",
+            color = Color.White,
+            fontSize = 12.sp
         )
     }
 }

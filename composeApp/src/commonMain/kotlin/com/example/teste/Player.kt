@@ -33,6 +33,7 @@ import io.github.rufenkhokhar.rememberKMPPlayerState
 @Composable
 fun Player() {
     val playerState = rememberKMPPlayerState()
+    var currentFileUrl by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -48,13 +49,30 @@ fun Player() {
                 .weight(1f)
         )
 
+        // Exibição da URL atual debaixo do vídeo
+        Text(
+            text = "Arquivo atual: $currentFileUrl",
+            color = Color.White,
+            fontSize = 12.sp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.DarkGray)
+                .padding(8.dp)
+        )
 
-        PlayerControls(playerState = playerState)
+        PlayerControls(
+            playerState = playerState,
+            onFileChanged = { url ->
+                currentFileUrl = url
+            }
+        )
     }
 
     LaunchedEffect(Unit) {
         // Usando arquivo da pasta raw com protocolo correto
-        playerState.setFileUrl("android.resource://com.example.teste/raw/sample_short_single_channel_m4a")
+        val initialUrl = "android.resource://com.example.teste/raw/sample_short_single_channel_m4a"
+        currentFileUrl = initialUrl
+        playerState.setFileUrl(initialUrl)
         playerState.play()
 
         playerState.observePlayerEvent().collect { event ->
@@ -73,14 +91,26 @@ fun Player() {
 
 @OptIn(ExperimentalMultiplatform::class)
 @Composable
-fun PlayerControls(playerState: KMPPlayerState) {
+fun PlayerControls(
+    playerState: KMPPlayerState,
+    onFileChanged: (String) -> Unit
+) {
     var isPlaying by remember { mutableStateOf(false) }
     var isLooping by remember { mutableStateOf(false) }
     
-    // Lista de arquivos disponíveis na pasta raw
+    // Lista completa de todos os arquivos disponíveis na pasta raw
     val availableFiles = listOf(
         "sample_short_single_channel_m4a",
         "sample_short_single_channel_mp3", 
+        "sample_short_single_channel_wma",
+        "sample_short_single_channel_wav",
+        "sample_short_single_channel_opus",
+        "sample_short_single_channel_ogg",
+        "sample_short_single_channel_flac",
+        "sample_short_single_channel_amr",
+        "sample_short_single_channel_aiff",
+        "sample_short_single_channel_ac3",
+        "sample_short_single_channel_aac",
         "testmp4"
     )
     
@@ -156,6 +186,7 @@ fun PlayerControls(playerState: KMPPlayerState) {
                     currentFileIndex = if (currentFileIndex > 0) currentFileIndex - 1 else availableFiles.size - 1
                     currentFile = availableFiles[currentFileIndex]
                     val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    onFileChanged(filePath)
                     playerState.setFileUrl(filePath)
                     playerState.play()
                     isPlaying = true
@@ -174,6 +205,7 @@ fun PlayerControls(playerState: KMPPlayerState) {
                     currentFileIndex = (currentFileIndex + 1) % availableFiles.size
                     currentFile = availableFiles[currentFileIndex]
                     val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    onFileChanged(filePath)
                     playerState.setFileUrl(filePath)
                     playerState.play()
                     isPlaying = true
@@ -208,6 +240,7 @@ fun PlayerControls(playerState: KMPPlayerState) {
                 onClick = {
                     // Carregar arquivo específico
                     val filePath = "android.resource://com.example.teste/raw/$currentFile"
+                    onFileChanged(filePath)
                     playerState.setFileUrl(filePath)
                     println("Carregando arquivo: $filePath")
                 },
